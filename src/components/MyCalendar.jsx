@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './MyCalendar.css';
@@ -8,6 +8,17 @@ const MyCalendar = () => {
   const [events, setEvents] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
 
+  useEffect(() => {
+    const storedEvents = JSON.parse(localStorage.getItem('calendarEvents'));
+    if (storedEvents) {
+      setEvents(storedEvents);
+    }
+  }, []);
+
+  const saveEventsToLocalStorage = (updatedEvents) => {
+    localStorage.setItem('calendarEvents', JSON.stringify(updatedEvents));
+  };
+
   const onChange = (newDate) => {
     if (newDate >= new Date().setHours(0, 0, 0, 0)) {
       setDate(newDate);
@@ -16,32 +27,35 @@ const MyCalendar = () => {
   };
 
   const addEvent = () => {
-
     const today = new Date().setHours(0, 0, 0, 0);
     const selected = new Date(selectedDate).setHours(0, 0, 0, 0);
 
     if (selected < today) {
-        alert("Cannot add events to previous dates.");
-        return;
-      }
+      alert('Cannot add events to previous dates.');
+      return;
+    }
 
-    if (events[selectedDate]) {
-      console.log('Event Already Add this Date');
-    } else {
-      const event = prompt('Enter event details:');
-      if (event) {
-        setEvents({
-          ...events,
-          [selectedDate]: event,
-        });
-      }
+    const event = prompt('Enter event details:');
+    if (event) {
+      const updatedEvents = {
+        ...events,
+        [selectedDate]: event,
+      };
+      setEvents(updatedEvents);
+      saveEventsToLocalStorage(updatedEvents);
     }
   };
 
   const deleteEvent = () => {
+    if (!selectedDate || !events[selectedDate]) {
+      return;
+    }
+
     const updatedEvents = { ...events };
     delete updatedEvents[selectedDate];
     setEvents(updatedEvents);
+    saveEventsToLocalStorage(updatedEvents);
+    setSelectedDate(null); // Clear selectedDate after deletion
   };
 
   const tileContent = ({ date, view }) => {
@@ -85,7 +99,7 @@ const MyCalendar = () => {
           onClickDay={handleDayClick}
         />
       </div>
-        {selectedDate && (
+      {selectedDate && (
         <div className="events-wrapper">
           <h2>Events</h2>
           <div>
@@ -101,8 +115,9 @@ const MyCalendar = () => {
           </div>
         </div>
       )}
-      </div>
+    </div>
   );
 };
 
 export default MyCalendar;
+
